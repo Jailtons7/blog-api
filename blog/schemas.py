@@ -1,7 +1,13 @@
 from pydantic import BaseModel
 
 
-class Post(BaseModel):
+class PostSchema(BaseModel):
     title: str
-    content: str
-    published: bool = False
+    body: str
+
+    class Config:
+        from_attributes = True
+
+
+class CompletePostSchema(PostSchema):
+    id: int
