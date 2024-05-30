@@ -1,18 +1,12 @@
 from pydantic import BaseModel
 
-
-class UserSchema(BaseModel):
-    username: str
-    email: str
-    password: str
-
-    class Config:
-        from_attributes = True
+from authentication.schemas import UserViewSchema
 
 
 class PostSchema(BaseModel):
     title: str
     body: str
+    creator: UserViewSchema
 
     class Config:
         from_attributes = True
