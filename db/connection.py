@@ -8,8 +8,7 @@ from settings import Settings
 settings = Settings()
 
 engine = create_engine(
-    url=settings.DATABASE_URL,
-    connect_args={'check_same_thread': False}
+    url=settings.DATABASE_URL
 )
 
 Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
