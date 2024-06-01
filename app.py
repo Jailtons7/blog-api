@@ -4,7 +4,7 @@ from db.connection import engine, Base
 from authentication.routers import auth_router
 from blog.routers import blog_router
 
-app = FastAPI()
+app = FastAPI(title="Blogs API", version="0.0.1")
 Base.metadata.create_all(engine)
 
 
