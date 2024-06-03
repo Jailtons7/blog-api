@@ -16,6 +16,11 @@ docker compose build
 docker compose up
 ```
 
+>Note: If you want to use some Python debugger, you can run:
+>```bash
+>docker compose run --rm --service-ports web
+>```
+
 ## Running without docker
 Running with docker is highly recommended, but if you want follow the next steps to run locally:
 
