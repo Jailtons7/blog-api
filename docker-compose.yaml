@@ -12,6 +12,9 @@ services:
     depends_on:
       - db
     command: bash -c "uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      - WATCHFILES_FORCE_POLLING=true
+
   db:
     image: postgres:13
     env_file:
