@@ -24,6 +24,21 @@ class UserViewSchema(BaseModel):
         from_attributes = True
 
 
+class ChangePasswordSchema(BaseModel):
+    old_password: str
+    new_password: str
+
+    class Config:
+        from_attributes = True
+
+
+class ChangePasswordResponseSchema(BaseModel):
+    message: str
+
+    class Config:
+        from_attributes = True
+
+
 class LoginSchema(BaseModel):
     username: str
     password: str

@@ -6,7 +6,13 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from authentication.schemas import UserAddSchema, UserViewSchema, Token
+from authentication.schemas import (
+    UserAddSchema,
+    UserViewSchema,
+    Token,
+    ChangePasswordSchema,
+    ChangePasswordResponseSchema,
+)
 from authentication.models import User
 from authentication.token import create_access_token
 from authentication.oauth2 import get_current_user
@@ -61,6 +67,19 @@ def get_user(
             detail=f"User not found: id {user_id}"
         )
     return user
+
+
+@router.patch("/users/change-password", response_model=ChangePasswordResponseSchema, status_code=status.HTTP_200_OK)
+def change_password(
+        data: ChangePasswordSchema,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    if user.check_password(data.old_password):
+        user.set_password(password=data.new_password)
+        db.commit()
+        return ChangePasswordResponseSchema(message="Password changed successfully")
+    return ChangePasswordResponseSchema(message="Your old password is not correct")
 
 
 @router.post("/access-token", response_model=Token, status_code=status.HTTP_201_CREATED)
