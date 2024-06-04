@@ -1,14 +1,15 @@
-from typing import List, cast, Union, Annotated
-from datetime import datetime, timedelta
+from typing import List, cast, Union
+from datetime import timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from authentication.schemas import UserAddSchema, UserViewSchema, LoginSchema, Token, TokenData
+from authentication.schemas import UserAddSchema, UserViewSchema, Token
 from authentication.models import User
 from authentication.token import create_access_token
+from authentication.oauth2 import get_current_user
 from db.connection import get_db
 from settings import Settings
 
@@ -37,7 +38,7 @@ async def add_user(user: UserAddSchema, db: Session = Depends(get_db)):
 
 
 @router.get("/users", response_model=List[UserViewSchema], status_code=status.HTTP_200_OK)
-def list_users(db: Session = Depends(get_db)):
+def list_users(user: UserViewSchema = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Retrieve all the users saved.
     """
@@ -46,7 +47,10 @@ def list_users(db: Session = Depends(get_db)):
 
 
 @router.get("/users/{user_id}", response_model=UserViewSchema, status_code=status.HTTP_200_OK)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(
+        user_id: int,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)):
     """
     Retrieve a specific user with the given {user_id}.
     """

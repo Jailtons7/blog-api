@@ -1,19 +1,24 @@
-from typing import cast, List, Dict
+from typing import cast, List
 
-from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from db.connection import get_db
 from blog.schemas import PostSchema, CompletePostSchema
 from blog.models import Post
 from blog.utils import PostsQueryParams
+from authentication.oauth2 import get_current_user
+from authentication.schemas import UserViewSchema
 
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[CompletePostSchema])
-async def list_posts(db: Session = Depends(get_db), query_params: PostsQueryParams = Depends(PostsQueryParams)):
+async def list_posts(
+        db: Session = Depends(get_db),
+        user: UserViewSchema = Depends(get_current_user),
+        query_params: PostsQueryParams = Depends(PostsQueryParams)):
     """
     <strong>Returns a paginated list of saved posts ordered by id descending.</strong>\n
     The default length of the list is 20, but you can customize it throughout the param "limit".\n
@@ -37,7 +42,10 @@ async def list_posts(db: Session = Depends(get_db), query_params: PostsQueryPara
 
 
 @router.get("/{post_id}", response_model=CompletePostSchema)
-async def get_post(post_id: int, db: Session = Depends(get_db)):
+async def get_post(
+        post_id: int,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)):
     post = db.query(Post).filter(
         cast("ColumnElement[bool]", Post.id == post_id)
     ).first()
@@ -50,7 +58,14 @@ async def get_post(post_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=PostSchema, status_code=status.HTTP_201_CREATED)
-async def add_post(post: PostSchema, db: Session = Depends(get_db)):
+async def add_post(
+        post: PostSchema,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)):
+    """
+    Adds a new post to the database.
+    Requires authentication
+    """
     new_post = Post(**post.dict())
     db.add(new_post)
     db.commit()
@@ -59,7 +74,11 @@ async def add_post(post: PostSchema, db: Session = Depends(get_db)):
 
 
 @router.put("/{post_id}", response_model=PostSchema, status_code=status.HTTP_202_ACCEPTED)
-async def update_post(post_id: int, post: PostSchema, db: Session = Depends(get_db)):
+async def update_post(
+        post_id: int,
+        post: PostSchema,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)):
     posts = db.query(Post).filter(cast("ColumnElement[bool]", Post.id == post_id))
     if posts.count() == 0:
         raise HTTPException(
@@ -72,7 +91,10 @@ async def update_post(post_id: int, post: PostSchema, db: Session = Depends(get_
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_blog(post_id: int, db: Session = Depends(get_db)):
+async def delete_blog(
+        post_id: int,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)):
     blog = db.query(Post).filter(
         cast("ColumnElement[bool]", Post.id == post_id)
     )
