@@ -1,6 +1,7 @@
-from typing import List, cast, Union
+from typing import List, cast, Union, Annotated
 from datetime import datetime, timedelta
 
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -59,7 +60,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/access-token", response_model=Token, status_code=status.HTTP_201_CREATED)
-def get_access_token(user: LoginSchema, db: Session = Depends(get_db)):
+def get_access_token(user: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     db_user: Union[User, None] = db.query(User).filter(
         cast("ColumnElement[bool]", User.email == user.username)
     ).first()
