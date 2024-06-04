@@ -47,9 +47,9 @@ async def add_user(user: UserAddSchema, db: Session = Depends(get_db)):
 @router.get("/users", response_model=List[UserViewSchema], status_code=status.HTTP_200_OK)
 def list_users(user: UserViewSchema = Depends(get_current_user), db: Session = Depends(get_db)):
     """
-    Retrieve all the users saved.
+    Retrieve all active users saved.
     """
-    users = db.query(User).all()
+    users = db.query(User).filter(cast("ColumnElement[bool]", User.is_active)).all()
     return users
 
 
@@ -70,7 +70,7 @@ def get_user(
     return user
 
 
-@router.put("/users/", response_model=UserUpdateSchema, status_code=status.HTTP_200_OK)
+@router.put("/users", response_model=UserUpdateSchema, status_code=status.HTTP_200_OK)
 def update_user(
         data: UserUpdateSchema,
         user: UserViewSchema = Depends(get_current_user),
@@ -86,6 +86,18 @@ def update_user(
         email=user.email,
         username=user.username
     )
+
+
+@router.delete("/users", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user: UserViewSchema = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Delete the current user.
+    """
+    # Actually, this only deactivates the user
+    user.is_active = False
+    db.commit()
+    db.refresh(user)
+    return True
 
 
 @router.patch("/users/change-password", response_model=MessageSchema, status_code=status.HTTP_200_OK)
