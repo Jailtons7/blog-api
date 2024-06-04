@@ -11,7 +11,8 @@ from authentication.schemas import (
     UserViewSchema,
     Token,
     ChangePasswordSchema,
-    ChangePasswordResponseSchema,
+    MessageSchema,
+    UserUpdateSchema,
 )
 from authentication.models import User
 from authentication.token import create_access_token
@@ -69,7 +70,25 @@ def get_user(
     return user
 
 
-@router.patch("/users/change-password", response_model=ChangePasswordResponseSchema, status_code=status.HTTP_200_OK)
+@router.put("/users/", response_model=UserUpdateSchema, status_code=status.HTTP_200_OK)
+def update_user(
+        data: UserUpdateSchema,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    user.name = data.name
+    user.email = data.email
+    user.username = data.username
+    db.commit()
+    db.refresh(user)
+    return UserUpdateSchema(
+        name=user.name,
+        email=user.email,
+        username=user.username
+    )
+
+
+@router.patch("/users/change-password", response_model=MessageSchema, status_code=status.HTTP_200_OK)
 def change_password(
         data: ChangePasswordSchema,
         user: UserViewSchema = Depends(get_current_user),
@@ -78,8 +97,8 @@ def change_password(
     if user.check_password(data.old_password):
         user.set_password(password=data.new_password)
         db.commit()
-        return ChangePasswordResponseSchema(message="Password changed successfully")
-    return ChangePasswordResponseSchema(message="Your old password is not correct")
+        return MessageSchema(message="Password changed successfully")
+    return MessageSchema(message="Your old password is not correct")
 
 
 @router.post("/access-token", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -95,7 +114,7 @@ def get_access_token(user: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
     if not db_user.check_password(user.password):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

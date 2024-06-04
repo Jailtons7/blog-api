@@ -13,6 +13,15 @@ class UserAddSchema(BaseModel):
         from_attributes = True
 
 
+class UserUpdateSchema(BaseModel):
+    name: str
+    username: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
 class UserViewSchema(BaseModel):
     id: int
     name: str
@@ -32,7 +41,7 @@ class ChangePasswordSchema(BaseModel):
         from_attributes = True
 
 
-class ChangePasswordResponseSchema(BaseModel):
+class MessageSchema(BaseModel):
     message: str
 
     class Config:
