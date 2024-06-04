@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, responses
 
 from db.connection import engine, Base
@@ -14,3 +15,7 @@ async def redirect_to_documentation():
 
 app.include_router(auth_router)
 app.include_router(blog_router)
+
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
