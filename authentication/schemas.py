@@ -14,6 +14,7 @@ class UserAddSchema(BaseModel):
 
 
 class UserViewSchema(BaseModel):
+    id: int
     name: str
     username: str
     email: str
@@ -37,4 +38,4 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: Union[str, None] = None
+    email: Union[str, None] = None
