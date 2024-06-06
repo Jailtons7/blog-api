@@ -2,6 +2,7 @@ from typing import cast, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import parse_obj_as
 
 from db.connection import get_db
 from blog.schemas import PostSchema, CompletePostSchema
@@ -57,7 +58,7 @@ async def get_post(
     return post
 
 
-@router.post("/", response_model=PostSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CompletePostSchema, status_code=status.HTTP_201_CREATED)
 async def add_post(
         post: PostSchema,
         user: UserViewSchema = Depends(get_current_user),
@@ -66,11 +67,12 @@ async def add_post(
     Adds a new post to the database.
     Requires authentication
     """
-    new_post = Post(**post.dict())
+    new_post = Post(**post.model_dump())
+    new_post.creator = user
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return post
+    return parse_obj_as(CompletePostSchema, new_post)
 
 
 @router.put("/{post_id}", response_model=PostSchema, status_code=status.HTTP_202_ACCEPTED)
