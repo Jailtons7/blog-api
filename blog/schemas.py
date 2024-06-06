@@ -6,7 +6,6 @@ from authentication.schemas import UserViewSchema
 class PostSchema(BaseModel):
     title: str
     body: str
-    creator: UserViewSchema
 
     class Config:
         from_attributes = True
@@ -14,3 +13,4 @@ class PostSchema(BaseModel):
 
 class CompletePostSchema(PostSchema):
     id: int
+    creator: UserViewSchema
