@@ -2,7 +2,7 @@ from typing import cast, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from db.connection import get_db
 from blog.schemas import PostSchema, CompletePostSchema
@@ -39,7 +39,8 @@ async def list_posts(
 
     if query_params.page:
         posts = posts.offset((query_params.page - 1) * query_params.limit)
-    return posts.all()
+    adapter = TypeAdapter(List[CompletePostSchema])
+    return adapter.validate_python(posts)
 
 
 @router.get("/{post_id}", response_model=CompletePostSchema)
@@ -55,7 +56,8 @@ async def get_post(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {post_id} not found"
         )
-    return post
+    adapter = TypeAdapter(CompletePostSchema)
+    return adapter.validate_python(post)
 
 
 @router.post("/", response_model=CompletePostSchema, status_code=status.HTTP_201_CREATED)
@@ -72,10 +74,11 @@ async def add_post(
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return parse_obj_as(CompletePostSchema, new_post)
+    adapter = TypeAdapter(CompletePostSchema)
+    return adapter.validate_python(new_post)
 
 
-@router.put("/{post_id}", response_model=PostSchema, status_code=status.HTTP_202_ACCEPTED)
+@router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_202_ACCEPTED)
 async def update_post(
         post_id: int,
         post: PostSchema,
@@ -87,9 +90,16 @@ async def update_post(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {post_id} not found"
         )
+    posts = posts.filter(Post.creator == user)
+    if posts.count() == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You cannot edit someone else's post"
+        )
     posts.update(post.dict())
     db.commit()
-    return post
+    adapter = TypeAdapter(CompletePostSchema)
+    return adapter.validate_python(posts.first())
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
