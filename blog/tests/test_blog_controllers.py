@@ -1,9 +1,12 @@
+from typing import List, Dict, cast
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from app import app
+from blog.models import Post
 from db.connection import get_db, Base
 from authentication.models import User
 
@@ -39,23 +42,29 @@ Base.metadata.create_all(bind=engine)
 
 
 @pytest.fixture(scope="module")
-def test_user():
-    password = "password"
-    user = User(name="test", username="test", email="test@example.com")
-    user.set_password(password=password)
+def test_users() -> List[Dict[str, str]]:
+    """
+    creates two test users
+    :return: list of dict with test users credentials
+    """
+    password1 = "password1"
+    password2 = "password2"
+    user1 = User(name="test1", username="test1", email="test1@example.com")
+    user2 = User(name="test2", username="test2", email="test2@example.com")
+    user1.set_password(password=password1)
+    user2.set_password(password=password2)
     for db in override_get_db():
-        db.add(user)
+        db.add(user1)
+        db.add(user2)
         db.commit()
-        db.refresh(user)
-    return {
-        "username": user.email,
-        "password": password,
-    }
+        db.refresh(user1)
+        db.refresh(user2)
+    return [{"username": user1.email, "password": password1}, {"username": user2.email, "password": password2}]
 
 
 @pytest.fixture(scope="module")
-def access_token(client, test_user):
-    response = client.post("/auth/access-token", data=test_user)
+def access_token(client, test_users):
+    response = client.post("/auth/access-token", data=test_users[0])
     assert response.status_code == 201
     token = response.json()["access_token"]
     assert token is not None
@@ -63,9 +72,12 @@ def access_token(client, test_user):
 
 
 def test_not_authenticated(client):
+    """
+    given an unauthenticated client
+    when it tries to access some protected endpoint
+    then the api should respond with a 401, not authenticated
+    """
     protected_endpoints = [
-        ("get", "/posts/"),
-        ("get", "/posts/1"),
         ("post", "/posts/"),
         ("delete", "/posts/1"),
         ("put", "/posts/1"),
@@ -77,6 +89,11 @@ def test_not_authenticated(client):
 
 
 def test_add_posts(client, access_token):
+    """
+    given an authenticated user
+    when it makes post requests to /posts
+    then it should create a post in database
+    """
     post_data = {
         "title": "test title",
         "body": "test body"
@@ -86,4 +103,65 @@ def test_add_posts(client, access_token):
     assert response.status_code == 201
     assert data["title"] == "test title"
     assert data["body"] == "test body"
-    assert data["creator"]["id"] == 1
+    for db in override_get_db():
+        assert db.query(Post).count() == 1
+
+
+def test_get_post(client):
+    """
+    given a user
+    when it makes a get requests in some specific post
+    then the api should respond with a 200 response and posts info
+    """
+    user_data = {
+        "name": "test",
+        "username": "test",
+        "email": "test@example.com"
+    }
+    post_data = {
+        "title": "test title",
+        "body": "test body"
+    }
+    for db in override_get_db():
+        user = User(**user_data)
+        user.set_password("pass")
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        post_data["creator"] = user
+        post = Post(**post_data)
+        db.add(post)
+        db.commit()
+        db.refresh(post)
+        post_id = post.id
+        response = client.get(url=f"/posts/{post_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["title"] == post_data["title"]
+        assert data["body"] == post_data["body"]
+
+
+def test_delete_posts(client, access_token):
+    """
+    given an authenticated user
+    when it creates a post
+    then it must be able to delete it
+    """
+    post = {"title": "test title", "body": "test body"}
+    response = client.post("/posts", json=post, headers={"Authorization": f"Bearer {access_token}"})
+    post_id = response.json()["id"]
+    response = client.delete(url="/posts/{}".format(post_id), headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 204
+    for db in override_get_db():
+        assert db.query(Post).filter(cast("ColumnElement[bool]", Post.id == post_id)).count() == 0
+
+
+def test_post_not_found(client, access_token):
+    """
+    given an authenticated user
+    when it tries to get a nonexistent post
+    then the system must return a not found message
+    """
+    response = client.delete(url="/posts/{}".format(10000), headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Post with id 10000 not found"
