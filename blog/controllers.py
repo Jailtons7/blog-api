@@ -107,14 +107,20 @@ async def delete_blog(
         post_id: int,
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
-    blog = db.query(Post).filter(
+    post = db.query(Post).filter(
         cast("ColumnElement[bool]", Post.id == post_id)
     )
-    if blog.count() == 0:
+    if post.count() == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {post_id} not found"
         )
-    blog.delete()
+    post = post.filter(Post.creator == user)
+    if post.count() == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"You cannot delete someone else's post"
+        )
+    post.delete()
     db.commit()
     return {"msg": "Post Deleted"}
