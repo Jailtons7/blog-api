@@ -1,6 +1,6 @@
 from typing import Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class UserAddSchema(BaseModel):
@@ -9,8 +9,7 @@ class UserAddSchema(BaseModel):
     email: str
     password: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdateSchema(BaseModel):
@@ -18,8 +17,7 @@ class UserUpdateSchema(BaseModel):
     username: str
     email: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserViewSchema(BaseModel):
@@ -29,31 +27,27 @@ class UserViewSchema(BaseModel):
     email: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ChangePasswordSchema(BaseModel):
     old_password: str
     new_password: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MessageSchema(BaseModel):
     message: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LoginSchema(BaseModel):
     username: str
     password: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
