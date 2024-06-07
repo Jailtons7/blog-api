@@ -18,7 +18,6 @@ router = APIRouter()
 @router.get("/", response_model=List[CompletePostSchema])
 async def list_posts(
         db: Session = Depends(get_db),
-        user: UserViewSchema = Depends(get_current_user),
         query_params: PostsQueryParams = Depends(PostsQueryParams)):
     """
     <strong>Returns a paginated list of saved posts ordered by id descending.</strong>\n
@@ -46,7 +45,6 @@ async def list_posts(
 @router.get("/{post_id}", response_model=CompletePostSchema)
 async def get_post(
         post_id: int,
-        user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
     post = db.query(Post).filter(
         cast("ColumnElement[bool]", Post.id == post_id)
