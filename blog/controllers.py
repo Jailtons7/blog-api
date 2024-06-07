@@ -1,7 +1,7 @@
 from typing import cast, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, query
 from pydantic import TypeAdapter
 
 from db.connection import get_db
@@ -78,12 +78,7 @@ async def add_post(
     return adapter.validate_python(new_post)
 
 
-@router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_202_ACCEPTED)
-async def update_post(
-        post_id: int,
-        post: PostSchema,
-        user: UserViewSchema = Depends(get_current_user),
-        db: Session = Depends(get_db)):
+async def get_post_from_user(db: Session, post_id: int, user: UserViewSchema) -> query.Query:
     posts = db.query(Post).filter(cast("ColumnElement[bool]", Post.id == post_id))
     if posts.count() == 0:
         raise HTTPException(
@@ -96,6 +91,16 @@ async def update_post(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"You cannot edit someone else's post"
         )
+    return posts
+
+
+@router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_202_ACCEPTED)
+async def update_post(
+        post_id: int,
+        post: PostSchema,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)):
+    posts = await get_post_from_user(db=db, post_id=post_id, user=user)
     posts.update(post.dict())
     db.commit()
     adapter = TypeAdapter(CompletePostSchema)
@@ -107,20 +112,7 @@ async def delete_blog(
         post_id: int,
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
-    post = db.query(Post).filter(
-        cast("ColumnElement[bool]", Post.id == post_id)
-    )
-    if post.count() == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id {post_id} not found"
-        )
-    post = post.filter(Post.creator == user)
-    if post.count() == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"You cannot delete someone else's post"
-        )
+    post = await get_post_from_user(db=db, post_id=post_id, user=user)
     post.delete()
     db.commit()
     return {"msg": "Post Deleted"}
