@@ -165,3 +165,19 @@ def test_post_not_found(client, access_token):
     response = client.delete(url="/posts/{}".format(10000), headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 404
     assert response.json()["detail"] == "Post with id 10000 not found"
+
+
+def test_update_post(client, access_token):
+    """
+    given an authenticated user
+    when it creates a post
+    then it must be able to update it
+    """
+    post = {"title": "test title", "body": "test body"}
+    response = client.post("/posts", json=post, headers={"Authorization": f"Bearer {access_token}"})
+    post_id = response.json()["id"]
+    update_ = {"title": "updated title", "body": "updated body"}
+    response = client.put(f"/posts/{post_id}", json=update_, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    assert response.json()["title"] == update_["title"]
+    assert response.json()["body"] == update_["body"]
