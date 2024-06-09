@@ -92,7 +92,7 @@ async def get_post_from_user(db: Session, post_id: int, user: UserViewSchema) ->
     return posts
 
 
-@router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_202_ACCEPTED)
+@router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_200_OK)
 async def update_post(
         post_id: int,
         post: PostSchema,
