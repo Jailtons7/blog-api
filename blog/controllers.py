@@ -99,7 +99,7 @@ async def update_post(
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
     posts = await get_post_from_user(db=db, post_id=post_id, user=user)
-    posts.update(post.dict())
+    posts.update(post.model_dump())
     db.commit()
     adapter = TypeAdapter(CompletePostSchema)
     return adapter.validate_python(posts.first())
