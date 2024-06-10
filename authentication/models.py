@@ -14,6 +14,7 @@ class User(Base):
     password = Column(String(100), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     posts = relationship("Post", back_populates="creator")
+    comments = relationship("Comment", back_populates="creator")
 
     def __repr__(self):
         return f'f<User {self.username}>'
