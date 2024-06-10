@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session, query
 from pydantic import TypeAdapter
 
 from db.connection import get_db
-from blog.schemas import PostSchema, CompletePostSchema
-from blog.models import Post
+from blog.schemas import (
+    PostSchema, CompletePostSchema, CommentSchema, CommentViewSchema,
+)
+from blog.models import Post, Comment
 from blog.utils import PostsQueryParams
 from authentication.oauth2 import get_current_user
 from authentication.schemas import UserViewSchema
@@ -114,3 +116,20 @@ async def delete_blog(
     post.delete()
     db.commit()
     return {"msg": "Post Deleted"}
+
+
+@router.post("/{post_id}/comments", response_model=CommentViewSchema, status_code=status.HTTP_201_CREATED)
+def add_comment(
+        post_id: int,
+        comment: CommentSchema,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    new_comment = Comment(**comment.model_dump())
+    new_comment.user_id = user.id
+    new_comment.post_id = post_id
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+    adapter = TypeAdapter(CommentViewSchema)
+    return adapter.validate_python(new_comment)
