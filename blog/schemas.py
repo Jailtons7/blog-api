@@ -1,3 +1,5 @@
+from typing import List, Union
+
 from pydantic import BaseModel, ConfigDict
 
 from authentication.schemas import UserViewSchema
@@ -15,3 +17,15 @@ class CompletePostSchema(PostSchema):
     creator: UserViewSchema
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CommentSchema(BaseModel):
+    body: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CommentViewSchema(CommentSchema):
+    id: int
+    responses: Union[List[CommentSchema], None]
+    creator: UserViewSchema
