@@ -54,7 +54,7 @@ async def get_post(
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id {post_id} not found"
+            detail=f"Post not found"
         )
     adapter = TypeAdapter(CompletePostSchema)
     return adapter.validate_python(post)
@@ -83,7 +83,7 @@ async def get_post_from_user(db: Session, post_id: int, user: UserViewSchema) ->
     if posts.count() == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id {post_id} not found"
+            detail=f"Post not found"
         )
     posts = posts.filter(Post.creator == user)
     if posts.count() == 0:
@@ -119,7 +119,7 @@ async def delete_blog(
 
 
 @router.post("/{post_id}/comments", response_model=CommentViewSchema, status_code=status.HTTP_201_CREATED)
-def add_comment(
+async def add_comment(
         post_id: int,
         comment: CommentSchema,
         user: UserViewSchema = Depends(get_current_user),
@@ -133,3 +133,37 @@ def add_comment(
     db.refresh(new_comment)
     adapter = TypeAdapter(CommentViewSchema)
     return adapter.validate_python(new_comment)
+
+
+@router.get("/{post_id}/comments", response_model=List[CommentViewSchema], status_code=status.HTTP_200_OK)
+async def list_comments(
+        post_id: int,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Returns all comments for a specific post.
+    """
+    comments = db.query(Comment).filter(cast("ColumnElement", Comment.post_id == post_id)).all()
+    adapter = TypeAdapter(List[CommentViewSchema])
+    return adapter.validate_python(comments)
+
+
+@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_comment(
+        comment_id: int,
+        user: UserViewSchema = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Deletes a comment with the provided <comment_id> from the database.
+    """
+    comment = db.query(Comment).filter(cast("ColumnElement", Comment.id == comment_id))
+    if comment.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Comment not found"
+        )
+    comment.delete()
+    db.commit()
+    return {"msg": "Comment Deleted"}
