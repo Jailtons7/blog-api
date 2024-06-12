@@ -9,15 +9,15 @@ from blog.schemas import (
     PostSchema, CompletePostSchema, CommentSchema, CommentViewSchema,
 )
 from blog.models import Post, Comment
-from blog.utils import PostsQueryParams
+from blog.utils import PostsQueryParams, CommentsQueryParams
 from authentication.oauth2 import get_current_user
 from authentication.schemas import UserViewSchema
 
 
-router = APIRouter()
+posts_router = APIRouter()
 
 
-@router.get("/", response_model=List[CompletePostSchema])
+@posts_router.get("", response_model=List[CompletePostSchema])
 async def list_posts(
         db: Session = Depends(get_db),
         query_params: PostsQueryParams = Depends(PostsQueryParams)):
@@ -44,10 +44,11 @@ async def list_posts(
     return adapter.validate_python(posts)
 
 
-@router.get("/{post_id}", response_model=CompletePostSchema)
+@posts_router.get("/{post_id}", response_model=CompletePostSchema)
 async def get_post(
         post_id: int,
         db: Session = Depends(get_db)):
+    """ Get a saved post by post_id """
     post = db.query(Post).filter(
         cast("ColumnElement[bool]", Post.id == post_id)
     ).first()
@@ -60,15 +61,12 @@ async def get_post(
     return adapter.validate_python(post)
 
 
-@router.post("/", response_model=CompletePostSchema, status_code=status.HTTP_201_CREATED)
+@posts_router.post("", response_model=CompletePostSchema, status_code=status.HTTP_201_CREATED)
 async def add_post(
         post: PostSchema,
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
-    """
-    Adds a new post to the database.
-    Requires authentication
-    """
+    """ Adds a new post into the database. """
     new_post = Post(**post.model_dump())
     new_post.creator = user
     db.add(new_post)
@@ -94,12 +92,13 @@ async def get_post_from_user(db: Session, post_id: int, user: UserViewSchema) ->
     return posts
 
 
-@router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_200_OK)
+@posts_router.put("/{post_id}", response_model=CompletePostSchema, status_code=status.HTTP_200_OK)
 async def update_post(
         post_id: int,
         post: PostSchema,
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
+    """ Updates a post """
     posts = await get_post_from_user(db=db, post_id=post_id, user=user)
     posts.update(post.model_dump())
     db.commit()
@@ -107,24 +106,29 @@ async def update_post(
     return adapter.validate_python(posts.first())
 
 
-@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_blog(
+@posts_router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(
         post_id: int,
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)):
+    """ Deletes a post from the database. """
     post = await get_post_from_user(db=db, post_id=post_id, user=user)
     post.delete()
     db.commit()
     return {"msg": "Post Deleted"}
 
 
-@router.post("/{post_id}/comments", response_model=CommentViewSchema, status_code=status.HTTP_201_CREATED)
+comments_router = APIRouter()
+
+
+@comments_router.post("/{post_id}", response_model=CommentViewSchema, status_code=status.HTTP_201_CREATED)
 async def add_comment(
         post_id: int,
         comment: CommentSchema,
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
+    """ Add a comment to the specified post. """
     new_comment = Comment(**comment.model_dump())
     new_comment.user_id = user.id
     new_comment.post_id = post_id
@@ -135,21 +139,24 @@ async def add_comment(
     return adapter.validate_python(new_comment)
 
 
-@router.get("/{post_id}/comments", response_model=List[CommentViewSchema], status_code=status.HTTP_200_OK)
+@comments_router.get("/{post_id}", response_model=List[CommentViewSchema], status_code=status.HTTP_200_OK)
 async def list_comments(
         post_id: int,
+        query_params: CommentsQueryParams = Depends(CommentsQueryParams),
         user: UserViewSchema = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
-    """
-    Returns all comments for a specific post.
-    """
-    comments = db.query(Comment).filter(cast("ColumnElement", Comment.post_id == post_id)).all()
+    """ Returns all comments for a specific post. """
+    comments = db.query(Comment).filter(cast("ColumnElement", Comment.post_id == post_id))
+    if query_params.limit and query_params.limit:
+        comments.limit(query_params.limit)
+        comments.offset((query_params.page - 1) * query_params.limit)
+    comments = comments.all()
     adapter = TypeAdapter(List[CommentViewSchema])
     return adapter.validate_python(comments)
 
 
-@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+@comments_router.delete("/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_comment(
         comment_id: int,
         user: UserViewSchema = Depends(get_current_user),
