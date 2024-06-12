@@ -7,7 +7,8 @@ from settings import Settings
 settings = Settings()
 
 engine = create_engine(
-    url=settings.DATABASE_URL
+    url=settings.DATABASE_URL,
+    echo=settings.DEBUG,
 )
 
 Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
