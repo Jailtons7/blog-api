@@ -164,7 +164,7 @@ def test_post_not_found(client, access_token):
     """
     response = client.delete(url="/posts/{}".format(10000), headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 404
-    assert response.json()["detail"] == "Post with id 10000 not found"
+    assert response.json()["detail"] == "Post not found"
 
 
 def test_update_post(client, access_token):
