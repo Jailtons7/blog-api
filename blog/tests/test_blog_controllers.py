@@ -184,3 +184,18 @@ def test_update_post(client, access_token):
     assert response.status_code == 200
     assert response.json()["title"] == update_["title"]
     assert response.json()["body"] == update_["body"]
+
+
+def test_add_comment(client, access_token):
+    """
+    Given an authenticated user
+    When it makes a post requests to /comments/{post_id}
+    Then it must be able to add a comment to that post
+    """
+    post = {"title": "test title", "body": "test body"}
+    response = client.post("/posts", json=post, headers={"Authorization": f"Bearer {access_token}"})
+    post_id = response.json()["id"]
+    comment = {"body": "Test comment!"}
+    response = client.post(f"/comments/{post_id}", json=comment, headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 201
+    assert response.json()["body"] == "Test comment!"
