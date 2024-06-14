@@ -81,6 +81,9 @@ def test_not_authenticated(client):
         ("post", "/posts/"),
         ("delete", "/posts/1"),
         ("put", "/posts/1"),
+        ("post", "/comments/1"),
+        ("get", "/comments/1"),
+        ("delete", "/comments/1"),
     ]
     for method, endpoint in protected_endpoints:
         response = getattr(client, method)(endpoint)
