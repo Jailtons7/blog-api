@@ -12,13 +12,6 @@ class PostSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CompletePostSchema(PostSchema):
-    id: int
-    creator: UserViewSchema
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class CommentSchema(BaseModel):
     body: str
 
@@ -29,3 +22,11 @@ class CommentViewSchema(CommentSchema):
     id: int
     responses: Union[List[CommentSchema], None]
     creator: UserViewSchema
+
+
+class CompletePostSchema(PostSchema):
+    id: int
+    creator: UserViewSchema
+    comments: List[CommentViewSchema]
+
+    model_config = ConfigDict(from_attributes=True)
