@@ -235,3 +235,25 @@ def test_list_comments(client, access_token):
     assert len(data) == 2
     for index, comment in enumerate(iterable=data, start=1):
         assert comment["body"] == f"Test comment {index}!"
+
+
+def test_delete_comment(client, access_token):
+    """
+    Given an authenticated user
+    When it makes a delete request /comments/{post_id}
+    Then it must be able to delete it
+    """
+    post_data = {"title": "test title", "body": "test body", "user_id": 1}
+    db = next(override_get_db())
+    post = Post(**post_data)
+    db.add(post)
+    db.commit()
+    db.refresh(post)
+    comment_data = {"body": "Test comment!", "user_id": 1, "post_id": post.id}
+    comment = Comment(**comment_data)
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    response = client.delete(f"/comments/{comment.id}", headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 204
+    assert db.query(Post, Comment).filter(cast("ColumnElement[bool]", Comment.id == comment.id)).all() == []
