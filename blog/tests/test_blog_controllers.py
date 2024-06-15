@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from app import app
-from blog.models import Post
+from blog.models import Post, Comment
 from db.connection import get_db, Base
 from authentication.models import User
 
@@ -199,3 +199,39 @@ def test_add_comment(client, access_token):
     response = client.post(f"/comments/{post_id}", json=comment, headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 201
     assert response.json()["body"] == "Test comment!"
+
+
+def test_list_comments(client, access_token):
+    """
+    Given an authenticated user
+    When it makes a post requests to /comments/{post_id}
+    Then it must be able to add a comment to that post
+    """
+    post_data = {"title": "test title", "body": "test body", "user_id": 1}
+    db = next(override_get_db())
+    post1 = Post(**post_data)
+    post2 = Post(**post_data)
+    db.add(post1)
+    db.add(post2)
+    db.commit()
+    db.refresh(post1)
+    db.refresh(post2)
+    comments_data = [
+        {"body": "Test comment 1!", "user_id": 1, "post_id": post1.id},
+        {"body": "Test comment 2!", "user_id": 1, "post_id": post1.id},
+        {"body": "Test comment 3!", "user_id": 1, "post_id": post2.id},  # this comment was created on post 2
+        {"body": "Test comment 4!", "user_id": 1, "post_id": post2.id}  # this comment was created on post 2
+    ]
+    for comment in comments_data:
+        comm = Comment(**comment)
+        db.add(comm)
+        db.commit()
+        db.refresh(comm)
+
+    # getting comments of the post 1
+    response = client.get(f"/comments/{post1.id}", headers={"Authorization": f"Bearer {access_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    for index, comment in enumerate(iterable=data, start=1):
+        assert comment["body"] == f"Test comment {index}!"
