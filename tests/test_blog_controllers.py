@@ -2,8 +2,8 @@ from typing import List, Dict, cast
 
 import pytest
 
-from blog.models import Post, Comment
-from authentication.models import User
+from src.blog.models import Post, Comment
+from src.authentication.models import User
 from tests.conftest import override_get_db
 
 

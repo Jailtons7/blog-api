@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from authentication.schemas import (
+from src.authentication.schemas import (
     UserAddSchema,
     UserViewSchema,
     Token,
@@ -14,9 +14,9 @@ from authentication.schemas import (
     MessageSchema,
     UserUpdateSchema,
 )
-from authentication.models import User
-from authentication.token import create_access_token
-from authentication.oauth2 import get_current_user
+from src.authentication.models import User
+from src.authentication.token import create_access_token
+from src.authentication.oauth2 import get_current_user
 from src.db.connection import get_db
 from settings import Settings
 

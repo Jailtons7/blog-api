@@ -3,7 +3,7 @@ from typing import Union
 
 from jose import jwt, JWTError
 from fastapi import HTTPException, status
-from authentication.schemas import TokenData
+from src.authentication.schemas import TokenData
 
 from settings import Settings
 

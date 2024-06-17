@@ -2,7 +2,7 @@ from typing import List, Union
 
 from pydantic import BaseModel, ConfigDict
 
-from authentication.schemas import UserViewSchema
+from src.authentication.schemas import UserViewSchema
 
 
 class PostSchema(BaseModel):

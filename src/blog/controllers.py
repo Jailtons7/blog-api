@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session, query
 from pydantic import TypeAdapter
 
 from src.db.connection import get_db
-from blog.schemas import (
+from src.blog.schemas import (
     PostSchema, CompletePostSchema, CommentSchema, CommentViewSchema,
 )
-from blog.models import Post, Comment
-from blog.utils import PostsQueryParams, CommentsQueryParams
-from authentication.oauth2 import get_current_user
-from authentication.schemas import UserViewSchema
+from src.blog.models import Post, Comment
+from src.blog.utils import PostsQueryParams, CommentsQueryParams
+from src.authentication.oauth2 import get_current_user
+from src.authentication.schemas import UserViewSchema
 
 
 posts_router = APIRouter()
