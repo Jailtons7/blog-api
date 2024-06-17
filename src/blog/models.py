@@ -3,7 +3,7 @@ from typing import cast
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from db.connection import Base
+from src.db.connection import Base
 
 
 class Post(Base):

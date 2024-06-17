@@ -17,7 +17,7 @@ from authentication.schemas import (
 from authentication.models import User
 from authentication.token import create_access_token
 from authentication.oauth2 import get_current_user
-from db.connection import get_db
+from src.db.connection import get_db
 from settings import Settings
 
 

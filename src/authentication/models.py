@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 
-from db.connection import Base
+from src.db.connection import Base
 
 
 class User(Base):

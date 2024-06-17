@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, query
 from pydantic import TypeAdapter
 
-from db.connection import get_db
+from src.db.connection import get_db
 from blog.schemas import (
     PostSchema, CompletePostSchema, CommentSchema, CommentViewSchema,
 )

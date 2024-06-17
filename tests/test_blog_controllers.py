@@ -1,44 +1,10 @@
 from typing import List, Dict, cast
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
-from sqlalchemy.orm import sessionmaker
 
-from app import app
 from blog.models import Post, Comment
-from db.connection import get_db, Base
 from authentication.models import User
-
-
-DATABASE_URL = "sqlite:///:memory:"
-
-engine = create_engine(
-    DATABASE_URL,
-    poolclass=StaticPool,
-    connect_args={
-        "check_same_thread": False
-    },
-)
-TestingSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-
-
-@pytest.fixture(scope="module")
-def client():
-    with TestClient(app=app) as c:
-        yield c
-
-
-def override_get_db():
-    db = TestingSession()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-Base.metadata.create_all(bind=engine)
+from tests.conftest import override_get_db
 
 
 @pytest.fixture(scope="module")
@@ -256,4 +222,4 @@ def test_delete_comment(client, access_token):
     db.refresh(comment)
     response = client.delete(f"/comments/{comment.id}", headers={"Authorization": f"Bearer {access_token}"})
     assert response.status_code == 204
-    assert db.query(Post, Comment).filter(cast("ColumnElement[bool]", Comment.id == comment.id)).all() == []
+    assert db.query(Comment).filter(cast("ColumnElement[bool]", Comment.id == comment.id)).all() == []
