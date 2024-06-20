@@ -1,6 +1,7 @@
 from typing import cast, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.orm import Session, query
 from pydantic import TypeAdapter
 
@@ -10,6 +11,7 @@ from src.blog.schemas import (
 )
 from src.blog.models import Post, Comment
 from src.blog.utils import PostsQueryParams, CommentsQueryParams
+from src.constants import REQUESTS_LIMIT_GET_POSTS
 from src.authentication.oauth2 import get_current_user
 from src.authentication.schemas import UserViewSchema
 
@@ -17,7 +19,14 @@ from src.authentication.schemas import UserViewSchema
 posts_router = APIRouter()
 
 
-@posts_router.get("", response_model=List[CompletePostSchema])
+@posts_router.get(
+    "",
+    response_model=List[CompletePostSchema],
+    dependencies=[Depends(RateLimiter(
+        times=REQUESTS_LIMIT_GET_POSTS["TIMES"],
+        seconds=REQUESTS_LIMIT_GET_POSTS["SECONDS"],
+    ))]
+)
 async def list_posts(
         db: Session = Depends(get_db),
         query_params: PostsQueryParams = Depends(PostsQueryParams)):
@@ -44,7 +53,14 @@ async def list_posts(
     return adapter.validate_python(posts)
 
 
-@posts_router.get("/{post_id}", response_model=CompletePostSchema)
+@posts_router.get(
+    "/{post_id}",
+    response_model=CompletePostSchema,
+    dependencies=[Depends(RateLimiter(
+        times=REQUESTS_LIMIT_GET_POSTS["TIMES"],
+        seconds=REQUESTS_LIMIT_GET_POSTS["SECONDS"],
+    ))]
+)
 async def get_post(
         post_id: int,
         db: Session = Depends(get_db)):

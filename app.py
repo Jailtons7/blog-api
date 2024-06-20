@@ -1,11 +1,12 @@
 import uvicorn
 from fastapi import FastAPI, responses
 
+from src.requests_limit import lifespan
 from src.db.connection import engine, Base
 from src.authentication.routers import auth_router
 from src.blog.routers import blog_router
 
-app = FastAPI(title="Blogs API", version="0.0.1")
+app = FastAPI(title="Blogs API", version="0.0.1", lifespan=lifespan)
 Base.metadata.create_all(engine)
 
 
