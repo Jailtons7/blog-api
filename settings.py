@@ -12,3 +12,4 @@ class Settings(BaseSettings):
     SECRET_KEY: str = env.str("SECRET_KEY")
     ALGORITHM: str = env.str("ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = env.int("ACCESS_TOKEN_EXPIRE_MINUTES")
+    REDIS_URL: str = env.str("REDIS_URL")
