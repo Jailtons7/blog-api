@@ -1,0 +1,6 @@
+REQUESTS_LIMIT_GET_POSTS = {
+    "TIMES": 5,
+    "SECONDS": 10,
+}
+
+
