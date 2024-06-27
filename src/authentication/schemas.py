@@ -1,4 +1,5 @@
 from typing import Union
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -53,6 +54,7 @@ class LoginSchema(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    token_expires: datetime
 
 
 class TokenData(BaseModel):

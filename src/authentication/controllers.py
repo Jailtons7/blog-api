@@ -1,5 +1,5 @@
 from typing import List, cast, Union
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status, HTTPException
@@ -129,8 +129,9 @@ def get_access_token(user: OAuth2PasswordRequestForm = Depends(), db: Session = 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    token_expires = (datetime.now() + expires_delta).strftime("%Y-%m-%dT%H:%M:%S")
     access_token = create_access_token(
-        data={"sub": db_user.email}, expires_delta=access_token_expires
+        data={"sub": db_user.email}, expires_delta=expires_delta
     )
-    return Token(access_token=access_token, token_type="bearer")
+    return Token(access_token=access_token, token_expires=token_expires, token_type="bearer")
