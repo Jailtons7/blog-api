@@ -57,5 +57,15 @@ class Token(BaseModel):
     token_expires: datetime
 
 
+class TokenVerifySchema(BaseModel):
+    token: str
+
+
 class TokenData(BaseModel):
     email: Union[str, None] = None
+
+
+class TokenVerifyResponseSchema(BaseModel):
+    valid: bool
+
+    model_config = ConfigDict(from_attributes=True)

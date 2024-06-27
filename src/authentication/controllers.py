@@ -13,9 +13,11 @@ from src.authentication.schemas import (
     ChangePasswordSchema,
     MessageSchema,
     UserUpdateSchema,
+    TokenVerifySchema,
+    TokenVerifyResponseSchema,
 )
 from src.authentication.models import User
-from src.authentication.token import create_access_token
+from src.authentication.token import create_access_token, verify_access_token
 from src.authentication.oauth2 import get_current_user
 from src.db.connection import get_db
 from settings import Settings
@@ -135,3 +137,13 @@ def get_access_token(user: OAuth2PasswordRequestForm = Depends(), db: Session = 
         data={"sub": db_user.email}, expires_delta=expires_delta
     )
     return Token(access_token=access_token, token_expires=token_expires, token_type="bearer")
+
+
+@router.post("/verify-token", response_model=TokenVerifyResponseSchema, status_code=status.HTTP_201_CREATED)
+async def verify_token(data: TokenVerifySchema):
+    try:
+        verify_access_token(token=data.token)
+        return TokenVerifyResponseSchema(valid=True)
+    except HTTPException as e:
+        print(e)
+        return TokenVerifyResponseSchema(valid=False)
